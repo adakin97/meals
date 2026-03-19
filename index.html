@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Meals</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #f7f6f2;
+      --card: #ffffff;
+      --accent: #4a7c59;
+      --accent2: #c97d4e;
+      --text: #1a1a1a;
+      --sub: #777;
+      --border: #e8e5df;
+      --radius: 14px;
+      --header-h: 56px;
+      --tab-h: 60px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom));
+      padding-top: calc(var(--header-h) + env(safe-area-inset-top));
+    }
+
+    /* HEADER */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: calc(var(--header-h) + env(safe-area-inset-top));
+      padding-top: env(safe-area-inset-top);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 16px;
+      padding-right: 16px;
+      z-index: 100;
+    }
+
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    header .week-nav { display: flex; align-items: center; gap: 8px; }
+    header .week-nav button {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: var(--accent); padding: 4px 8px; border-radius: 8px;
+    }
+    header .week-nav button:active { background: var(--border); }
+    header .week-label { font-size: 13px; color: var(--sub); font-weight: 500; min-width: 80px; text-align: center; }
+
+    /* TABS */
+    nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--tab-h) + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+
+    nav button {
+      flex: 1; background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 3px;
+      font-size: 10px; font-weight: 600; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      transition: color 0.15s;
+    }
+
+    nav button.active { color: var(--accent); }
+    nav button svg { width: 22px; height: 22px; stroke-width: 1.8; }
+
+    /* VIEWS */
+    .view { display: none; padding: 16px; }
+    .view.active { display: block; }
+
+    /* PLANNER */
+    .day-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .day-name.today { color: var(--accent); }
+
+    .day-date { font-size: 12px; color: var(--sub); }
+
+    .day-body { padding: 12px 14px; }
+
+    .meal-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .meal-picker {
+      flex: 1;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .meal-picker:focus { outline: none; border-color: var(--accent); }
+
+    .clear-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--sub); font-size: 18px; padding: 4px;
+      line-height: 1; border-radius: 6px;
+    }
+
+    .clear-btn:active { background: var(--border); }
+
+    .cook-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cook-pill {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sub);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .cook-pill.active-alex {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .cook-pill.active-partner {
+      background: var(--accent2);
+      border-color: var(--accent2);
+      color: #fff;
+    }
+
+    .ingredients-toggle {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ingredients-toggle.hidden { display: none; }
+
+    .ingredients-list {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--sub);
+      line-height: 1.7;
+    }
+
+    .ingredients-list.hidden { display: none; }
+
+    .no-meal { font-size: 13px; color: #bbb; font-style: italic; }
+
+    /* MEALS LIBRARY */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .section-title { font-size: 16px; font-weight: 700; }
+
+    .add-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .add-btn:active { opacity: 0.85; }
+
+    .meal-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .meal-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px;
+      cursor: pointer;
+    }
+
+    .meal-card-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .meal-card-meta {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 2px;
+    }
+
+    .meal-card-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      color: var(--sub);
+      display: flex;
+      align-items: center;
+    }
+
+    .icon-btn:active { background: var(--border); }
+    .icon-btn.del { color: #e05c5c; }
+
+    .meal-card-body {
+      padding: 0 14px 14px;
+      display: none;
+    }
+
+    .meal-card-body.open { display: block; }
+
+    .ingredient-tag {
+      display: inline-block;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text);
+      margin: 3px 3px 0 0;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+      width: 100%;
+      max-height: 90dvh;
+      overflow-y: auto;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .form-input:focus { outline: none; border-color: var(--accent); }
+
+    .ingredient-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ingredient-input-row .form-input { flex: 1; }
+
+    .add-ingredient-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .ingredient-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .ingredient-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 10px 5px 12px;
+      font-size: 13px;
+    }
+
+    .chip-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary:active { opacity: 0.85; }
+    .btn-secondary:active { background: var(--border); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--sub);
+    }
+
+    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 300;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* SETTINGS */
+    .settings-row {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .settings-row label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      display: block;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍽 Meals</h1>
+  <div class="week-nav" id="weekNav">
+    <button onclick="changeWeek(-1)">‹</button>
+    <span class="week-label" id="weekLabel"></span>
+    <button onclick="changeWeek(1)">›</button>
+  </div>
+</header>
+
+<!-- PLANNER VIEW -->
+<div class="view active" id="view-planner">
+  <div id="plannerDays"></div>
+</div>
+
+<!-- MEALS VIEW -->
+<div class="view" id="view-meals">
+  <div class="section-header">
+    <span class="section-title">Meals Library</span>
+    <button class="add-btn" onclick="openMealModal()">+ Add meal</button>
+  </div>
+  <div id="mealsList"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="active" id="tab-planner" onclick="switchTab('planner')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Planner
+  </button>
+  <button id="tab-meals" onclick="switchTab('meals')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+    Meals
+  </button>
+</nav>
+
+<!-- MEAL MODAL -->
+<div class="modal-backdrop" id="mealModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Add Meal</div>
+    <div class="form-group">
+      <label class="form-label">Meal name</label>
+      <input class="form-input" id="mealNameInput" placeholder="e.g. Pasta Carbonara" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ingredients</label>
+      <div class="ingredient-input-row">
+        <input class="form-input" id="ingredientInput" placeholder="Add an ingredient..." onkeydown="if(event.key==='Enter'){addIngredientChip();}" />
+        <button class="add-ingredient-btn" onclick="addIngredientChip()">+</button>
+      </div>
+      <div class="ingredient-chips" id="ingredientChips"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeMealModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveMeal()">Save meal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const NAMES = { alex: 'Alex', partner: 'Lauren' };  // Change 'Mia' to your partner's name
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDhj3duFKrYdZzOAg5bSJryGfgX1kJcUZE",
+  authDomain:        "meals-app-59b5d.firebaseapp.com",
+  projectId:         "meals-app-59b5d",
+  storageBucket:     "meals-app-59b5d.firebasestorage.app",
+  messagingSenderId: "729808455983",
+  appId:             "1:729808455983:web:38a9ab7a2f4eca430fb9da"
+};
+// ────────────────────────────────────────────────────────────────────────
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const DAYS = ['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_NAMES = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
+
+let currentWeekStart = getMonday(new Date());
+let mealsCache = {};       // mealId -> meal object
+let plannerCache = {};     // day -> { mealId, mealName, cook }
+let editingMealId = null;
+let modalIngredients = [];
+let expandedIngredients = {};  // day -> bool
+let expandedMeals = {};        // mealId -> bool
+
+// ── WEEK HELPERS ─────────────────────────────────────────────────────────
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function weekKey(d) {
+  const y = d.getFullYear();
+  const start = getMonday(new Date(y, 0, 1));
+  const weekNum = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+  return `${y}-W${String(weekNum).padStart(2,'0')}`;
+}
+
+function dayDate(weekStart, dayIdx) {
+  const d = new Date(weekStart);
+  d.setDate(d.getDate() + dayIdx);
+  return d;
+}
+
+function formatShortDate(d) {
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function isToday(d) {
+  const t = new Date();
+  return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
+}
+
+function changeWeek(delta) {
+  currentWeekStart.setDate(currentWeekStart.getDate() + delta * 7);
+  loadWeek();
+}
+
+function updateWeekLabel() {
+  const end = new Date(currentWeekStart);
+  end.setDate(end.getDate() + 6);
+  const s = currentWeekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const e = end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  document.getElementById('weekLabel').textContent = `${s} – ${e}`;
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('weekNav').style.display = tab === 'planner' ? 'flex' : 'none';
+  if (tab === 'meals') renderMeals();
+}
+
+// ── FIRESTORE LISTENERS ───────────────────────────────────────────────────
+let unsubPlanner = null;
+
+function loadWeek() {
+  updateWeekLabel();
+  const wk = weekKey(currentWeekStart);
+  if (unsubPlanner) unsubPlanner();
+
+  unsubPlanner = db.collection('planner').doc(wk).onSnapshot(snap => {
+    plannerCache = snap.exists ? snap.data() : {};
+    renderPlanner();
+  });
+}
+
+function loadMeals(cb) {
+  db.collection('meals').orderBy('name').onSnapshot(snap => {
+    mealsCache = {};
+    snap.forEach(doc => mealsCache[doc.id] = { id: doc.id, ...doc.data() });
+    if (cb) cb();
+    else renderMeals();
+  });
+}
+
+// ── PLANNER RENDER ────────────────────────────────────────────────────────
+function renderPlanner() {
+  const container = document.getElementById('plannerDays');
+  container.innerHTML = '';
+
+  DAYS.forEach((day, idx) => {
+    const date = dayDate(currentWeekStart, idx);
+    const entry = plannerCache[day] || {};
+    const meal = entry.mealId ? mealsCache[entry.mealId] : null;
+    const ingredients = meal ? (meal.ingredients || []) : [];
+    const showIngredients = expandedIngredients[day] && ingredients.length > 0;
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.innerHTML = `
+      <div class="day-header">
+        <span class="day-name${isToday(date) ? ' today' : ''}">${DAY_NAMES[day]}</span>
+        <span class="day-date">${formatShortDate(date)}</span>
+      </div>
+      <div class="day-body">
+        <div class="meal-select-row">
+          <select class="meal-picker" onchange="setMeal('${day}', this.value)">
+            <option value="">— No meal planned —</option>
+            ${Object.values(mealsCache).map(m =>
+              `<option value="${m.id}" ${entry.mealId === m.id ? 'selected' : ''}>${m.name}</option>`
+            ).join('')}
+          </select>
+          ${entry.mealId ? `<button class="clear-btn" onclick="clearDay('${day}')">×</button>` : ''}
+        </div>
+        ${entry.mealId ? `
+          <div class="cook-row">
+            <div class="cook-pill ${entry.cook === 'alex' ? 'active-alex' : ''}" onclick="setCook('${day}', 'alex')">${NAMES.alex}</div>
+            <div class="cook-pill ${entry.cook === 'partner' ? 'active-partner' : ''}" onclick="setCook('${day}', 'partner')">${NAMES.partner}</div>
+            <div class="cook-pill ${(!entry.cook || entry.cook === 'together') ? 'active-alex' : ''}" style="${(!entry.cook || entry.cook === 'together') ? 'background:var(--accent);border-color:var(--accent);color:#fff' : ''}" onclick="setCook('${day}', 'together')">Together</div>
+          </div>
+          ${ingredients.length > 0 ? `
+            <div class="ingredients-toggle" onclick="toggleIngredients('${day}')">
+              ${showIngredients ? '▾ Hide ingredients' : '▸ Show ingredients'} (${ingredients.length})
+            </div>
+            <div class="ingredients-list ${showIngredients ? '' : 'hidden'}">
+              ${ingredients.join(' · ')}
+            </div>
+          ` : ''}
+        ` : `<div class="no-meal">Nothing planned yet</div>`}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleIngredients(day) {
+  expandedIngredients[day] = !expandedIngredients[day];
+  renderPlanner();
+}
+
+async function setMeal(day, mealId) {
+  const wk = weekKey(currentWeekStart);
+  const meal = mealsCache[mealId];
+  const update = {
+    [day]: mealId
+      ? { mealId, mealName: meal.name, cook: plannerCache[day]?.cook || '' }
+      : firebase.firestore.FieldValue.delete()
+  };
+  await db.collection('planner').doc(wk).set(update, { merge: true });
+}
+
+async function clearDay(day) {
+  const wk = weekKey(currentWeekStart);
+  expandedIngredients[day] = false;
+  await db.collection('planner').doc(wk).set(
+    { [day]: firebase.firestore.FieldValue.delete() },
+    { merge: true }
+  );
+}
+
+async function setCook(day, cook) {
+  const wk = weekKey(currentWeekStart);
+  const entry = plannerCache[day] || {};
+  if (!entry.mealId) return;
+  await db.collection('planner').doc(wk).set(
+    { [day]: { ...entry, cook } },
+    { merge: true }
+  );
+}
+
+// ── MEALS RENDER ──────────────────────────────────────────────────────────
+function renderMeals() {
+  const container = document.getElementById('mealsList');
+  const meals = Object.values(mealsCache);
+
+  if (meals.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🥘</div>
+        <p>No meals yet. Add your first one!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  meals.sort((a,b) => a.name.localeCompare(b.name)).forEach(meal => {
+    const expanded = expandedMeals[meal.id];
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.innerHTML = `
+      <div class="meal-card-header" onclick="toggleMeal('${meal.id}')">
+        <div>
+          <div class="meal-card-name">${meal.name}</div>
+          <div class="meal-card-meta">${(meal.ingredients || []).length} ingredient${(meal.ingredients||[]).length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="meal-card-actions">
+          <button class="icon-btn" onclick="event.stopPropagation(); openMealModal('${meal.id}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn del" onclick="event.stopPropagation(); deleteMeal('${meal.id}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="meal-card-body ${expanded ? 'open' : ''}">
+        ${(meal.ingredients || []).length > 0
+          ? (meal.ingredients || []).map(i => `<span class="ingredient-tag">${i}</span>`).join('')
+          : '<span style="font-size:13px;color:var(--sub)">No ingredients listed</span>'
+        }
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleMeal(id) {
+  expandedMeals[id] = !expandedMeals[id];
+  renderMeals();
+}
+
+async function deleteMeal(id) {
+  if (!confirm('Delete this meal?')) return;
+  await db.collection('meals').doc(id).delete();
+  showToast('Meal deleted');
+}
+
+// ── MEAL MODAL ────────────────────────────────────────────────────────────
+function openMealModal(mealId) {
+  editingMealId = mealId || null;
+  modalIngredients = [];
+  document.getElementById('mealNameInput').value = '';
+  document.getElementById('ingredientInput').value = '';
+  document.getElementById('ingredientChips').innerHTML = '';
+
+  if (mealId && mealsCache[mealId]) {
+    const meal = mealsCache[mealId];
+    document.getElementById('mealNameInput').value = meal.name;
+    document.getElementById('modalTitle').textContent = 'Edit Meal';
+    modalIngredients = [...(meal.ingredients || [])];
+    renderChips();
+  } else {
+    document.getElementById('modalTitle').textContent = 'Add Meal';
+  }
+
+  document.getElementById('mealModal').classList.add('open');
+  setTimeout(() => document.getElementById('mealNameInput').focus(), 300);
+}
+
+function closeMealModal() {
+  document.getElementById('mealModal').classList.remove('open');
+  editingMealId = null;
+  modalIngredients = [];
+}
+
+function addIngredientChip() {
+  const input = document.getElementById('ingredientInput');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!modalIngredients.includes(val)) {
+    modalIngredients.push(val);
+    renderChips();
+  }
+  input.value = '';
+  input.focus();
+}
+
+function removeChip(idx) {
+  modalIngredients.splice(idx, 1);
+  renderChips();
+}
+
+function renderChips() {
+  document.getElementById('ingredientChips').innerHTML = modalIngredients.map((i, idx) => `
+    <div class="ingredient-chip">
+      ${i}
+      <button class="chip-remove" onclick="removeChip(${idx})">×</button>
+    </div>
+  `).join('');
+}
+
+async function saveMeal() {
+  const name = document.getElementById('mealNameInput').value.trim();
+  if (!name) { showToast('Please enter a meal name'); return; }
+
+  const data = { name, ingredients: modalIngredients, updatedAt: new Date() };
+
+  if (editingMealId) {
+    await db.collection('meals').doc(editingMealId).update(data);
+    showToast('Meal updated');
+  } else {
+    data.createdAt = new Date();
+    await db.collection('meals').add(data);
+    showToast('Meal added');
+  }
+
+  closeMealModal();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.getElementById('weekNav').style.display = 'flex';
+
+// Close modal on backdrop click
+document.getElementById('mealModal').addEventListener('click', function(e) {
+  if (e.target === this) closeMealModal();
+});
+
+loadMeals(() => loadWeek());
+</script>
+</body>
+</html>
