@@ -292,6 +292,66 @@
       margin: 3px 3px 0 0;
     }
 
+    .meal-source {
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meal-source a { color: var(--accent); text-decoration: none; }
+    .meal-source a:hover { text-decoration: underline; }
+
+    .meal-notes {
+      font-size: 13px;
+      color: var(--sub);
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    .star-rating {
+      display: flex;
+      gap: 2px;
+      margin-top: 8px;
+    }
+
+    .star-rating .star {
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--border);
+      transition: color 0.15s;
+      background: none;
+      border: none;
+      padding: 0 1px;
+    }
+
+    .star-rating .star.filled { color: #e8b730; }
+    .star-rating .star:active { transform: scale(1.2); }
+
+    .rating-display {
+      font-size: 12px;
+      color: #e8b730;
+      letter-spacing: 1px;
+    }
+
+    .cook-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .cook-badge.alex { background: var(--accent); color: #fff; }
+    .cook-badge.partner { background: var(--accent2); color: #fff; }
+    .cook-badge.together { background: #6b7fb5; color: #fff; }
+
     /* MODAL */
     .modal-backdrop {
       display: none;
@@ -530,12 +590,20 @@
       <input class="form-input" id="mealNameInput" placeholder="e.g. Pasta Carbonara" />
     </div>
     <div class="form-group">
+      <label class="form-label">Source</label>
+      <input class="form-input" id="mealSourceInput" placeholder="e.g. BBC Good Food, https://..." />
+    </div>
+    <div class="form-group">
       <label class="form-label">Ingredients</label>
       <div class="ingredient-input-row">
         <input class="form-input" id="ingredientInput" placeholder="Add an ingredient..." onkeydown="if(event.key==='Enter'){addIngredientChip();}" />
         <button class="add-ingredient-btn" onclick="addIngredientChip()">+</button>
       </div>
       <div class="ingredient-chips" id="ingredientChips"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input" id="mealNotesInput" placeholder="Any tips, variations, etc." rows="3" style="resize:vertical;font-family:inherit;"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeMealModal()">Cancel</button>
@@ -670,10 +738,24 @@ function renderPlanner() {
 
     const card = document.createElement('div');
     card.className = 'day-card';
+    const cookLabel = entry.cook === 'alex' ? `${NAMES.alex} is cooking`
+      : entry.cook === 'partner' ? `${NAMES.partner} is cooking`
+      : entry.cook === 'together' ? 'Cooking together'
+      : '';
+    const cookBadgeClass = entry.cook === 'alex' ? 'alex'
+      : entry.cook === 'partner' ? 'partner'
+      : entry.cook === 'together' ? 'together'
+      : '';
+
     card.innerHTML = `
       <div class="day-header">
-        <span class="day-name${isToday(date) ? ' today' : ''}">${DAY_NAMES[day]}</span>
-        <span class="day-date">${formatShortDate(date)}</span>
+        <div>
+          <span class="day-name${isToday(date) ? ' today' : ''}">${DAY_NAMES[day]}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${entry.mealId && entry.cook ? `<span class="cook-badge ${cookBadgeClass}">${cookLabel}</span>` : ''}
+          <span class="day-date">${formatShortDate(date)}</span>
+        </div>
       </div>
       <div class="day-body">
         <div class="meal-select-row">
@@ -689,7 +771,7 @@ function renderPlanner() {
           <div class="cook-row">
             <div class="cook-pill ${entry.cook === 'alex' ? 'active-alex' : ''}" onclick="setCook('${day}', 'alex')">${NAMES.alex}</div>
             <div class="cook-pill ${entry.cook === 'partner' ? 'active-partner' : ''}" onclick="setCook('${day}', 'partner')">${NAMES.partner}</div>
-            <div class="cook-pill ${(!entry.cook || entry.cook === 'together') ? 'active-alex' : ''}" style="${(!entry.cook || entry.cook === 'together') ? 'background:var(--accent);border-color:var(--accent);color:#fff' : ''}" onclick="setCook('${day}', 'together')">Together</div>
+            <div class="cook-pill ${entry.cook === 'together' ? 'active-alex' : ''}" style="${entry.cook === 'together' ? 'background:#6b7fb5;border-color:#6b7fb5;color:#fff' : ''}" onclick="setCook('${day}', 'together')">Together</div>
           </div>
           ${ingredients.length > 0 ? `
             <div class="ingredients-toggle" onclick="toggleIngredients('${day}')">
@@ -758,13 +840,25 @@ function renderMeals() {
   container.innerHTML = '';
   meals.sort((a,b) => a.name.localeCompare(b.name)).forEach(meal => {
     const expanded = expandedMeals[meal.id];
+    const rating = meal.rating || 0;
+    const ratingStars = rating > 0 ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '';
+    const sourceHtml = meal.source
+      ? (meal.source.startsWith('http')
+        ? `<div class="meal-source"><a href="${meal.source}" target="_blank">${meal.source}</a></div>`
+        : `<div class="meal-source">${meal.source}</div>`)
+      : '';
+
     const card = document.createElement('div');
     card.className = 'meal-card';
     card.innerHTML = `
       <div class="meal-card-header" onclick="toggleMeal('${meal.id}')">
         <div>
           <div class="meal-card-name">${meal.name}</div>
-          <div class="meal-card-meta">${(meal.ingredients || []).length} ingredient${(meal.ingredients||[]).length !== 1 ? 's' : ''}</div>
+          <div class="meal-card-meta">
+            ${(meal.ingredients || []).length} ingredient${(meal.ingredients||[]).length !== 1 ? 's' : ''}
+            ${ratingStars ? ` · <span class="rating-display">${ratingStars}</span>` : ''}
+          </div>
+          ${sourceHtml}
         </div>
         <div class="meal-card-actions">
           <button class="icon-btn" onclick="event.stopPropagation(); openMealModal('${meal.id}')">
@@ -780,6 +874,10 @@ function renderMeals() {
           ? (meal.ingredients || []).map(i => `<span class="ingredient-tag">${i}</span>`).join('')
           : '<span style="font-size:13px;color:var(--sub)">No ingredients listed</span>'
         }
+        ${meal.notes ? `<div class="meal-notes">${meal.notes}</div>` : ''}
+        <div class="star-rating">
+          ${[1,2,3,4,5].map(s => `<button class="star ${s <= rating ? 'filled' : ''}" onclick="event.stopPropagation(); rateMeal('${meal.id}', ${s})">★</button>`).join('')}
+        </div>
       </div>
     `;
     container.appendChild(card);
@@ -797,17 +895,28 @@ async function deleteMeal(id) {
   showToast('Meal deleted');
 }
 
+async function rateMeal(id, stars) {
+  const current = mealsCache[id]?.rating || 0;
+  const newRating = current === stars ? 0 : stars;
+  await db.collection('meals').doc(id).update({ rating: newRating });
+  showToast(newRating ? `Rated ${newRating} star${newRating > 1 ? 's' : ''}` : 'Rating cleared');
+}
+
 // ── MEAL MODAL ────────────────────────────────────────────────────────────
 function openMealModal(mealId) {
   editingMealId = mealId || null;
   modalIngredients = [];
   document.getElementById('mealNameInput').value = '';
+  document.getElementById('mealSourceInput').value = '';
+  document.getElementById('mealNotesInput').value = '';
   document.getElementById('ingredientInput').value = '';
   document.getElementById('ingredientChips').innerHTML = '';
 
   if (mealId && mealsCache[mealId]) {
     const meal = mealsCache[mealId];
     document.getElementById('mealNameInput').value = meal.name;
+    document.getElementById('mealSourceInput').value = meal.source || '';
+    document.getElementById('mealNotesInput').value = meal.notes || '';
     document.getElementById('modalTitle').textContent = 'Edit Meal';
     modalIngredients = [...(meal.ingredients || [])];
     renderChips();
@@ -855,13 +964,16 @@ async function saveMeal() {
   const name = document.getElementById('mealNameInput').value.trim();
   if (!name) { showToast('Please enter a meal name'); return; }
 
-  const data = { name, ingredients: modalIngredients, updatedAt: new Date() };
+  const source = document.getElementById('mealSourceInput').value.trim();
+  const notes = document.getElementById('mealNotesInput').value.trim();
+  const data = { name, source, notes, ingredients: modalIngredients, updatedAt: new Date() };
 
   if (editingMealId) {
     await db.collection('meals').doc(editingMealId).update(data);
     showToast('Meal updated');
   } else {
     data.createdAt = new Date();
+    data.rating = 0;
     await db.collection('meals').add(data);
     showToast('Meal added');
   }
