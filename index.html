@@ -33,8 +33,8 @@
       background-attachment: fixed;
       color: var(--text);
       min-height: 100dvh;
-      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom));
-      padding-top: calc(var(--header-h) + env(safe-area-inset-top));
+      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px);
+      padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 8px);
     }
 
     /* HEADER */
@@ -91,7 +91,7 @@
     nav button svg { width: 22px; height: 22px; stroke-width: 1.8; }
 
     /* VIEWS */
-    .view { display: none; padding: 16px; }
+    .view { display: none; padding: 16px; padding-top: 24px; }
     .view.active { display: block; }
 
     /* PLANNER */
@@ -99,7 +99,7 @@
       background: var(--card);
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       overflow: hidden;
     }
 
@@ -257,7 +257,7 @@
       background: var(--card);
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       overflow: hidden;
     }
 
