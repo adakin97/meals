@@ -27,7 +27,7 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
-      background-image: url('https://source.unsplash.com/1200x1600/daily?mountains,nature,landscape');
+      background-image: var(--wallpaper);
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -1143,6 +1143,29 @@ function showToast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+// ── DAILY WALLPAPER ───────────────────────────────────────────────────────
+const wallpapers = [
+  'photo-1506905925346-21bda4d32df4', // snowy alps
+  'photo-1464822759023-fed622ff2c3b', // mountain peak sunset
+  'photo-1519681393784-d120267933ba', // starry mountains
+  'photo-1486870591958-9b9d0d1dda99', // misty mountains
+  'photo-1454496522488-7a8e488e8606', // himalayan range
+  'photo-1483728642387-6c3bdd6c93e5', // mountain lake reflection
+  'photo-1470071459604-3b5ec3a7fe05', // green valley fog
+  'photo-1501785888041-af3ef285b470', // lake and mountains
+  'photo-1506744038136-46273834b3fb', // mountain sunrise
+  'photo-1434394354979-a235cd36269d', // alpine meadow
+  'photo-1491002052546-bf38f186af56', // snowy ridge
+  'photo-1445363692815-ebcd599f7621', // mountain forest
+  'photo-1500534314263-0869cef07e8f', // coastal cliffs
+  'photo-1470770903676-69b98201ea1c', // mountain wildflowers
+];
+const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+const todayWallpaper = wallpapers[dayOfYear % wallpapers.length];
+document.documentElement.style.setProperty('--wallpaper',
+  `url('https://images.unsplash.com/${todayWallpaper}?w=1200&q=80&auto=format')`
+);
+
 document.getElementById('weekNav').style.display = 'flex';
 
 // Close modal on backdrop click
