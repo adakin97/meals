@@ -769,11 +769,13 @@ function loadWeek() {
 }
 
 function loadMeals(cb) {
+  let firstLoad = true;
   db.collection('meals').orderBy('name').onSnapshot(snap => {
     mealsCache = {};
     snap.forEach(doc => mealsCache[doc.id] = { id: doc.id, ...doc.data() });
-    if (cb) cb();
-    else renderMeals();
+    if (firstLoad && cb) { firstLoad = false; cb(); }
+    renderMeals();
+    renderPlanner();
   });
 }
 
