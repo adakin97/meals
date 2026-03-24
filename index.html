@@ -316,18 +316,20 @@
 
     .star-rating {
       display: flex;
-      gap: 2px;
-      margin-top: 8px;
+      gap: 4px;
+      margin-top: 4px;
     }
 
     .star-rating .star {
       cursor: pointer;
-      font-size: 20px;
+      font-size: 24px;
       color: var(--border);
       transition: color 0.15s;
       background: none;
       border: none;
-      padding: 0 1px;
+      padding: 4px;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .star-rating .star.filled { color: #e8b730; }
@@ -338,6 +340,37 @@
       color: #e8b730;
       letter-spacing: 1px;
     }
+
+    .dual-rating {
+      margin-top: 10px;
+    }
+
+    .dual-rating .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .dual-rating .rating-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sub);
+      min-width: 52px;
+    }
+
+    .week-group-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 16px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .week-group-header:first-child { margin-top: 0; }
 
     .cook-badge {
       font-size: 11px;
@@ -761,9 +794,7 @@ function renderPlanner() {
         <div class="meal-select-row">
           <select class="meal-picker" onchange="setMeal('${day}', this.value)">
             <option value="">— No meal planned —</option>
-            ${Object.values(mealsCache).map(m =>
-              `<option value="${m.id}" ${entry.mealId === m.id ? 'selected' : ''}>${m.name}</option>`
-            ).join('')}
+            ${buildMealOptions(entry.mealId)}
           </select>
           ${entry.mealId ? `<button class="clear-btn" onclick="clearDay('${day}')">×</button>` : ''}
         </div>
@@ -824,6 +855,112 @@ async function setCook(day, cook) {
 }
 
 // ── MEALS RENDER ──────────────────────────────────────────────────────────
+function getMealWeekKey(meal) {
+  if (!meal.createdAt) return 'unknown';
+  const d = meal.createdAt.toDate ? meal.createdAt.toDate() : new Date(meal.createdAt);
+  return weekKey(getMonday(d));
+}
+
+function formatWeekLabel(wk) {
+  // Parse "2026-W13" into a readable date range
+  const parts = wk.match(/^(\d{4})-W(\d{2})$/);
+  if (!parts) return wk;
+  const year = parseInt(parts[1]);
+  const week = parseInt(parts[2]);
+  // Approximate: Jan 1 + (week-1)*7 days, find that Monday
+  const jan1 = new Date(year, 0, 1);
+  const dayOfWeek = jan1.getDay();
+  const firstMonday = new Date(year, 0, 1 + ((8 - dayOfWeek) % 7));
+  const weekStart = new Date(firstMonday);
+  weekStart.setDate(weekStart.getDate() + (week - 2) * 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const s = weekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const e = weekEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return `${s} – ${e}`;
+}
+
+function buildMealOptions(selectedId) {
+  const currentWk = weekKey(currentWeekStart);
+  const thisWeek = [];
+  const earlier = [];
+  Object.values(mealsCache).sort((a,b) => a.name.localeCompare(b.name)).forEach(m => {
+    if (getMealWeekKey(m) === currentWk) thisWeek.push(m);
+    else earlier.push(m);
+  });
+  let html = '';
+  if (thisWeek.length > 0) {
+    html += `<optgroup label="Added this week">`;
+    thisWeek.forEach(m => { html += `<option value="${m.id}" ${selectedId === m.id ? 'selected' : ''}>${m.name}</option>`; });
+    html += `</optgroup>`;
+  }
+  if (earlier.length > 0) {
+    html += `<optgroup label="Previous weeks">`;
+    earlier.forEach(m => { html += `<option value="${m.id}" ${selectedId === m.id ? 'selected' : ''}>${m.name}</option>`; });
+    html += `</optgroup>`;
+  }
+  return html;
+}
+
+function renderMealCard(meal) {
+  const expanded = expandedMeals[meal.id];
+  const ratingAlex = meal.ratingAlex || meal.rating || 0;
+  const ratingLauren = meal.ratingLauren || 0;
+  const avgRating = (ratingAlex || ratingLauren) ? Math.round(((ratingAlex || 0) + (ratingLauren || 0)) / ((ratingAlex ? 1 : 0) + (ratingLauren ? 1 : 0))) : 0;
+  const avgStars = avgRating > 0 ? '★'.repeat(avgRating) + '☆'.repeat(5 - avgRating) : '';
+
+  const sourceHtml = meal.source
+    ? (meal.source.startsWith('http')
+      ? `<div class="meal-source"><a href="${meal.source}" target="_blank" onclick="event.stopPropagation()">${meal.source}</a></div>`
+      : `<div class="meal-source">${meal.source}</div>`)
+    : '';
+
+  const card = document.createElement('div');
+  card.className = 'meal-card';
+  card.innerHTML = `
+    <div class="meal-card-header" onclick="toggleMeal('${meal.id}')">
+      <div style="min-width:0;flex:1;">
+        <div class="meal-card-name">${meal.name}</div>
+        <div class="meal-card-meta">
+          ${(meal.ingredients || []).length} ingredient${(meal.ingredients||[]).length !== 1 ? 's' : ''}
+          ${avgStars ? ` · <span class="rating-display">${avgStars}</span>` : ''}
+        </div>
+        ${sourceHtml}
+      </div>
+      <div class="meal-card-actions">
+        <button class="icon-btn" onclick="event.stopPropagation(); openMealModal('${meal.id}')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn del" onclick="event.stopPropagation(); deleteMeal('${meal.id}')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="meal-card-body ${expanded ? 'open' : ''}">
+      ${(meal.ingredients || []).length > 0
+        ? (meal.ingredients || []).map(i => `<span class="ingredient-tag">${i}</span>`).join('')
+        : '<span style="font-size:13px;color:var(--sub)">No ingredients listed</span>'
+      }
+      ${meal.notes ? `<div class="meal-notes">${meal.notes}</div>` : ''}
+      <div class="dual-rating">
+        <div class="rating-row">
+          <span class="rating-label">${NAMES.alex}</span>
+          <div class="star-rating">
+            ${[1,2,3,4,5].map(s => `<button class="star ${s <= ratingAlex ? 'filled' : ''}" onclick="event.stopPropagation(); rateMeal('${meal.id}', ${s}, 'alex')">★</button>`).join('')}
+          </div>
+        </div>
+        <div class="rating-row">
+          <span class="rating-label">${NAMES.partner}</span>
+          <div class="star-rating">
+            ${[1,2,3,4,5].map(s => `<button class="star ${s <= ratingLauren ? 'filled' : ''}" onclick="event.stopPropagation(); rateMeal('${meal.id}', ${s}, 'lauren')">★</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
 function renderMeals() {
   const container = document.getElementById('mealsList');
   const meals = Object.values(mealsCache);
@@ -838,49 +975,32 @@ function renderMeals() {
   }
 
   container.innerHTML = '';
-  meals.sort((a,b) => a.name.localeCompare(b.name)).forEach(meal => {
-    const expanded = expandedMeals[meal.id];
-    const rating = meal.rating || 0;
-    const ratingStars = rating > 0 ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '';
-    const sourceHtml = meal.source
-      ? (meal.source.startsWith('http')
-        ? `<div class="meal-source"><a href="${meal.source}" target="_blank">${meal.source}</a></div>`
-        : `<div class="meal-source">${meal.source}</div>`)
-      : '';
 
-    const card = document.createElement('div');
-    card.className = 'meal-card';
-    card.innerHTML = `
-      <div class="meal-card-header" onclick="toggleMeal('${meal.id}')">
-        <div>
-          <div class="meal-card-name">${meal.name}</div>
-          <div class="meal-card-meta">
-            ${(meal.ingredients || []).length} ingredient${(meal.ingredients||[]).length !== 1 ? 's' : ''}
-            ${ratingStars ? ` · <span class="rating-display">${ratingStars}</span>` : ''}
-          </div>
-          ${sourceHtml}
-        </div>
-        <div class="meal-card-actions">
-          <button class="icon-btn" onclick="event.stopPropagation(); openMealModal('${meal.id}')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button class="icon-btn del" onclick="event.stopPropagation(); deleteMeal('${meal.id}')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="meal-card-body ${expanded ? 'open' : ''}">
-        ${(meal.ingredients || []).length > 0
-          ? (meal.ingredients || []).map(i => `<span class="ingredient-tag">${i}</span>`).join('')
-          : '<span style="font-size:13px;color:var(--sub)">No ingredients listed</span>'
-        }
-        ${meal.notes ? `<div class="meal-notes">${meal.notes}</div>` : ''}
-        <div class="star-rating">
-          ${[1,2,3,4,5].map(s => `<button class="star ${s <= rating ? 'filled' : ''}" onclick="event.stopPropagation(); rateMeal('${meal.id}', ${s})">★</button>`).join('')}
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
+  // Group meals by week
+  const currentWk = weekKey(getMonday(new Date()));
+  const groups = {};
+  meals.forEach(meal => {
+    const wk = getMealWeekKey(meal);
+    if (!groups[wk]) groups[wk] = [];
+    groups[wk].push(meal);
+  });
+
+  // Sort weeks: current week first, then most recent
+  const sortedWeeks = Object.keys(groups).sort((a, b) => {
+    if (a === currentWk) return -1;
+    if (b === currentWk) return 1;
+    return b.localeCompare(a);
+  });
+
+  sortedWeeks.forEach(wk => {
+    const header = document.createElement('div');
+    header.className = 'week-group-header';
+    header.textContent = wk === currentWk ? 'This Week' : formatWeekLabel(wk);
+    container.appendChild(header);
+
+    groups[wk].sort((a,b) => a.name.localeCompare(b.name)).forEach(meal => {
+      container.appendChild(renderMealCard(meal));
+    });
   });
 }
 
@@ -895,11 +1015,13 @@ async function deleteMeal(id) {
   showToast('Meal deleted');
 }
 
-async function rateMeal(id, stars) {
-  const current = mealsCache[id]?.rating || 0;
+async function rateMeal(id, stars, who) {
+  const field = who === 'lauren' ? 'ratingLauren' : 'ratingAlex';
+  const current = mealsCache[id]?.[field] || (who === 'alex' ? mealsCache[id]?.rating : 0) || 0;
   const newRating = current === stars ? 0 : stars;
-  await db.collection('meals').doc(id).update({ rating: newRating });
-  showToast(newRating ? `Rated ${newRating} star${newRating > 1 ? 's' : ''}` : 'Rating cleared');
+  await db.collection('meals').doc(id).update({ [field]: newRating });
+  const name = who === 'lauren' ? NAMES.partner : NAMES.alex;
+  showToast(newRating ? `${name}: ${newRating} star${newRating > 1 ? 's' : ''}` : `${name}: rating cleared`);
 }
 
 // ── MEAL MODAL ────────────────────────────────────────────────────────────
@@ -973,7 +1095,8 @@ async function saveMeal() {
     showToast('Meal updated');
   } else {
     data.createdAt = new Date();
-    data.rating = 0;
+    data.ratingAlex = 0;
+    data.ratingLauren = 0;
     await db.collection('meals').add(data);
     showToast('Meal added');
   }
