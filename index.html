@@ -893,6 +893,7 @@ async function setCook(day, cook) {
 function getMealWeekKey(meal) {
   if (!meal.createdAt) return 'unknown';
   const d = meal.createdAt.toDate ? meal.createdAt.toDate() : new Date(meal.createdAt);
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1); // Sunday → treat as next week
   return weekKey(getMonday(d));
 }
 
