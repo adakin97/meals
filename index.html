@@ -21,6 +21,8 @@
       --penguin-belly: #0a0a0a;
       --zebra: #2a2a2a;
       --zebra-stripe: #3a3a3a;
+      --lauren: #a78bfa;
+      --together: #fb923c;
       --text: #ffffff;
       --sub: #888888;
       --border: #252525;
@@ -166,8 +168,8 @@
       flex: 1;
       padding: 7px 12px;
       border-radius: 8px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
+      border: 1px solid var(--border);
+      background: transparent;
       font-size: 13px;
       font-weight: 600;
       color: var(--sub);
@@ -177,28 +179,21 @@
     }
 
     .cook-pill.active-alex {
-      background: var(--penguin);
+      background: rgba(198, 241, 53, 0.1);
       border-color: var(--penguin);
-      color: var(--penguin-belly);
+      color: var(--penguin);
     }
 
     .cook-pill.active-partner {
-      background: var(--zebra);
-      border-color: var(--zebra);
-      color: #fff;
-      background-image: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 8px,
-        rgba(255,255,255,0.15) 8px,
-        rgba(255,255,255,0.15) 12px
-      );
+      background: rgba(167, 139, 250, 0.1);
+      border-color: var(--lauren);
+      color: var(--lauren);
     }
 
     .cook-pill.active-together {
-      background: linear-gradient(90deg, var(--penguin) 50%, var(--zebra) 50%);
-      border-color: var(--penguin);
-      color: #fff;
+      background: rgba(251, 146, 60, 0.1);
+      border-color: var(--together);
+      color: var(--together);
     }
 
     .ingredients-toggle {
@@ -404,15 +399,25 @@
       padding: 3px 10px;
       border-radius: 20px;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
+      border: 1px solid;
     }
 
-    .cook-badge.alex { background: var(--penguin); color: var(--penguin-belly); }
-    .cook-badge.partner {
-      background: var(--zebra); color: #fff;
-      background-image: repeating-linear-gradient(90deg, transparent, transparent 6px, rgba(255,255,255,0.15) 6px, rgba(255,255,255,0.15) 9px);
+    .cook-badge.alex {
+      background: rgba(198, 241, 53, 0.1);
+      border-color: rgba(198, 241, 53, 0.4);
+      color: var(--penguin);
     }
-    .cook-badge.together { background: linear-gradient(90deg, var(--penguin) 50%, var(--zebra) 50%); color: #fff; }
+    .cook-badge.partner {
+      background: rgba(167, 139, 250, 0.1);
+      border-color: rgba(167, 139, 250, 0.4);
+      color: var(--lauren);
+    }
+    .cook-badge.together {
+      background: rgba(251, 146, 60, 0.1);
+      border-color: rgba(251, 146, 60, 0.4);
+      color: var(--together);
+    }
 
     /* MODAL */
     .modal-backdrop {
@@ -1226,6 +1231,7 @@ function selectFbAuthor(who) {
   fbAuthor = who;
   document.getElementById('fb-pill-alex').className = 'cook-pill' + (who === 'alex' ? ' active-alex' : '');
   document.getElementById('fb-pill-partner').className = 'cook-pill' + (who === 'partner' ? ' active-partner' : '');
+
 }
 
 async function submitFeedback() {
