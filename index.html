@@ -13,17 +13,17 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     :root {
-      --bg: #f0f4f8;
-      --card: rgba(255, 255, 255, 0.88);
-      --accent: #2d3436;
-      --accent2: #636e72;
-      --penguin: #1e272e;
-      --penguin-belly: #f5a623;
-      --zebra: #2d3436;
-      --zebra-stripe: #dfe6e9;
-      --text: #1a1a1a;
-      --sub: #636e72;
-      --border: #dfe6e9;
+      --bg: #0a0a0a;
+      --card: #161616;
+      --accent: #c6f135;
+      --accent2: #888888;
+      --penguin: #c6f135;
+      --penguin-belly: #0a0a0a;
+      --zebra: #2a2a2a;
+      --zebra-stripe: #3a3a3a;
+      --text: #ffffff;
+      --sub: #888888;
+      --border: #252525;
       --radius: 14px;
       --header-h: 56px;
       --tab-h: 60px;
@@ -32,10 +32,6 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
-      background-image: var(--wallpaper);
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
       color: var(--text);
       min-height: 100dvh;
       padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px);
@@ -48,7 +44,7 @@
       top: 0; left: 0; right: 0;
       height: calc(var(--header-h) + env(safe-area-inset-top));
       padding-top: env(safe-area-inset-top);
-      background: rgba(255, 255, 255, 0.75);
+      background: rgba(10, 10, 10, 0.92);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -75,7 +71,7 @@
       bottom: 0; left: 0; right: 0;
       height: calc(var(--tab-h) + env(safe-area-inset-bottom));
       padding-bottom: env(safe-area-inset-bottom);
-      background: rgba(255, 255, 255, 0.75);
+      background: rgba(10, 10, 10, 0.92);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
@@ -145,7 +141,7 @@
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
       padding-right: 32px;
@@ -230,7 +226,7 @@
 
     .ingredients-list.hidden { display: none; }
 
-    .no-meal { font-size: 13px; color: #bbb; font-style: italic; }
+    .no-meal { font-size: 13px; color: var(--sub); font-style: italic; }
 
     /* MEALS LIBRARY */
     .section-header {
@@ -423,7 +419,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.7);
       z-index: 200;
       align-items: flex-end;
       justify-content: center;
@@ -432,8 +428,9 @@
     .modal-backdrop.open { display: flex; }
 
     .modal {
-      background: var(--card);
+      background: #1a1a1a;
       border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border);
       padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
       width: 100%;
       max-height: 90dvh;
@@ -573,8 +570,8 @@
       bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 12px);
       left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: #1a1a1a;
-      color: #fff;
+      background: var(--accent);
+      color: #0a0a0a;
       padding: 10px 18px;
       border-radius: 20px;
       font-size: 13px;
@@ -608,6 +605,56 @@
       display: block;
       margin-bottom: 6px;
     }
+
+    /* FEEDBACK */
+    .feedback-hero {
+      text-align: center;
+      padding: 28px 16px 20px;
+    }
+
+    .feedback-hero-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .feedback-hot {
+      color: var(--accent);
+    }
+
+    .feedback-hero-sub {
+      font-size: 13px;
+      color: var(--sub);
+      margin-top: 6px;
+    }
+
+    .feedback-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .feedback-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .feedback-item-date {
+      font-size: 11px;
+      color: var(--sub);
+    }
+
+    .feedback-item-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -635,6 +682,33 @@
   <div id="mealsList"></div>
 </div>
 
+<!-- FEEDBACK VIEW -->
+<div class="view" id="view-feedback">
+  <div class="feedback-hero">
+    <div class="feedback-hero-title">Feedback for the<br><span class="feedback-hot">(hot)</span> developer</div>
+    <div class="feedback-hero-sub">Alex reads every word. Probably.</div>
+  </div>
+
+  <div class="day-card" style="margin-bottom:16px;">
+    <div style="padding:14px;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">From</label>
+        <div class="cook-row">
+          <div class="cook-pill" id="fb-pill-alex" onclick="selectFbAuthor('alex')">🐧 Alex</div>
+          <div class="cook-pill" id="fb-pill-partner" onclick="selectFbAuthor('partner')">🦓 Lauren</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Your feedback</label>
+        <textarea class="form-input" id="feedbackInput" placeholder="Tell the developer what you think..." rows="4" style="resize:vertical;font-family:inherit;"></textarea>
+      </div>
+      <button class="btn-primary" style="width:100%;" onclick="submitFeedback()">Submit feedback</button>
+    </div>
+  </div>
+
+  <div id="feedbackList"></div>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav>
   <button class="active" id="tab-planner" onclick="switchTab('planner')">
@@ -644,6 +718,10 @@
   <button id="tab-meals" onclick="switchTab('meals')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
     Meals
+  </button>
+  <button id="tab-feedback" onclick="switchTab('feedback')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Feedback
   </button>
 </nav>
 
@@ -765,6 +843,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('weekNav').style.display = tab === 'planner' ? 'flex' : 'none';
   if (tab === 'meals') renderMeals();
+  if (tab === 'feedback') loadFeedback();
 }
 
 // ── FIRESTORE LISTENERS ───────────────────────────────────────────────────
@@ -1140,6 +1219,53 @@ async function saveMeal() {
   closeMealModal();
 }
 
+// ── FEEDBACK ─────────────────────────────────────────────────────────────
+let fbAuthor = null;
+
+function selectFbAuthor(who) {
+  fbAuthor = who;
+  document.getElementById('fb-pill-alex').className = 'cook-pill' + (who === 'alex' ? ' active-alex' : '');
+  document.getElementById('fb-pill-partner').className = 'cook-pill' + (who === 'partner' ? ' active-partner' : '');
+}
+
+async function submitFeedback() {
+  const text = document.getElementById('feedbackInput').value.trim();
+  if (!text) { showToast('Write something first'); return; }
+  if (!fbAuthor) { showToast('Select who you are first'); return; }
+  await db.collection('feedback').add({ text, from: fbAuthor, createdAt: new Date() });
+  document.getElementById('feedbackInput').value = '';
+  showToast('Feedback sent!');
+  loadFeedback();
+}
+
+function loadFeedback() {
+  db.collection('feedback').orderBy('createdAt', 'desc').get().then(snap => {
+    const container = document.getElementById('feedbackList');
+    if (snap.empty) {
+      container.innerHTML = '<div class="empty-state"><p>No feedback yet. Be the first.</p></div>';
+      return;
+    }
+    container.innerHTML = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const date = d.createdAt?.toDate ? d.createdAt.toDate() : new Date(d.createdAt);
+      const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const name = d.from === 'alex' ? NAMES.alex : NAMES.partner;
+      const badgeClass = d.from === 'alex' ? 'alex' : 'partner';
+      const el = document.createElement('div');
+      el.className = 'feedback-item';
+      el.innerHTML = `
+        <div class="feedback-item-header">
+          <span class="cook-badge ${badgeClass}">${name}</span>
+          <span class="feedback-item-date">${dateStr}</span>
+        </div>
+        <div class="feedback-item-text">${d.text}</div>
+      `;
+      container.appendChild(el);
+    });
+  });
+}
+
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -1149,29 +1275,6 @@ function showToast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-// ── DAILY WALLPAPER ───────────────────────────────────────────────────────
-const wallpapers = [
-  'photo-1506905925346-21bda4d32df4', // snowy alps
-  'photo-1464822759023-fed622ff2c3b', // mountain peak sunset
-  'photo-1519681393784-d120267933ba', // starry mountains
-  'photo-1486870591958-9b9d0d1dda99', // misty mountains
-  'photo-1454496522488-7a8e488e8606', // himalayan range
-  'photo-1483728642387-6c3bdd6c93e5', // mountain lake reflection
-  'photo-1470071459604-3b5ec3a7fe05', // green valley fog
-  'photo-1501785888041-af3ef285b470', // lake and mountains
-  'photo-1506744038136-46273834b3fb', // mountain sunrise
-  'photo-1434394354979-a235cd36269d', // alpine meadow
-  'photo-1491002052546-bf38f186af56', // snowy ridge
-  'photo-1445363692815-ebcd599f7621', // mountain forest
-  'photo-1500534314263-0869cef07e8f', // coastal cliffs
-  'photo-1470770903676-69b98201ea1c', // mountain wildflowers
-];
-const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
-const todayWallpaper = wallpapers[dayOfYear % wallpapers.length];
-document.documentElement.style.setProperty('--wallpaper',
-  `url('https://images.unsplash.com/${todayWallpaper}?w=1200&q=80&auto=format')`
-);
-
 document.getElementById('weekNav').style.display = 'flex';
 
 // Close modal on backdrop click
