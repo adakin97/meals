@@ -419,6 +419,57 @@
       color: var(--together);
     }
 
+    /* OUT STATUS */
+    .out-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .out-label {
+      font-size: 11px; color: var(--sub); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.4px; flex-shrink: 0;
+    }
+    .out-pill {
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid var(--border); background: transparent;
+      font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer;
+    }
+    .out-pill.active {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.5); color: #f87171;
+    }
+    .out-badge {
+      font-size: 11px; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    /* SHOP */
+    .shop-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .shop-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: var(--radius);
+      background: var(--card); border: 1px solid var(--border);
+      margin-bottom: 8px; cursor: pointer; transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .shop-item.checked { opacity: 0.38; }
+    .shop-check {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--border); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0; color: var(--accent);
+    }
+    .shop-item.checked .shop-check {
+      background: var(--accent); border-color: var(--accent); color: #0a0a0a;
+    }
+    .shop-item-name { font-size: 14px; font-weight: 600; }
+    .shop-item-meals { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
     /* MODAL */
     .modal-backdrop {
       display: none;
@@ -687,6 +738,11 @@
   <div id="mealsList"></div>
 </div>
 
+<!-- SHOP VIEW -->
+<div class="view" id="view-shop">
+  <div id="shopContent"></div>
+</div>
+
 <!-- FEEDBACK VIEW -->
 <div class="view" id="view-feedback">
   <div class="feedback-hero">
@@ -723,6 +779,10 @@
   <button id="tab-meals" onclick="switchTab('meals')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
     Meals
+  </button>
+  <button id="tab-shop" onclick="switchTab('shop')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    Shop
   </button>
   <button id="tab-feedback" onclick="switchTab('feedback')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -789,11 +849,14 @@ const DAY_NAMES = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday'
 
 let currentWeekStart = getMonday(new Date());
 let mealsCache = {};       // mealId -> meal object
-let plannerCache = {};     // day -> { mealId, mealName, cook }
+let plannerCache = {};     // day -> { mealId, mealName, cook, outAlex, outPartner }
 let editingMealId = null;
 let modalIngredients = [];
 let expandedIngredients = {};  // day -> bool
 let expandedMeals = {};        // mealId -> bool
+let shopChecked = {};          // ingredient -> bool
+let shopWeekKey = null;        // week key when shopChecked was last reset
+let _shopIngredients = [];     // current shop list (for toggleShopItem index)
 
 // ── WEEK HELPERS ─────────────────────────────────────────────────────────
 function getMonday(d) {
@@ -846,8 +909,9 @@ function switchTab(tab) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('weekNav').style.display = tab === 'planner' ? 'flex' : 'none';
+  document.getElementById('weekNav').style.display = (tab === 'planner' || tab === 'shop') ? 'flex' : 'none';
   if (tab === 'meals') renderMeals();
+  if (tab === 'shop') renderShop();
   if (tab === 'feedback') loadFeedback();
 }
 
@@ -862,6 +926,7 @@ function loadWeek() {
   unsubPlanner = db.collection('planner').doc(wk).onSnapshot(snap => {
     plannerCache = snap.exists ? snap.data() : {};
     renderPlanner();
+    if (document.getElementById('view-shop').classList.contains('active')) renderShop();
   });
 }
 
@@ -899,12 +964,18 @@ function renderPlanner() {
       : entry.cook === 'together' ? 'together'
       : '';
 
+    const outBadges = [
+      entry.outAlex ? `<span class="out-badge">🐧 out</span>` : '',
+      entry.outPartner ? `<span class="out-badge">🦓 out</span>` : ''
+    ].filter(Boolean).join('');
+
     card.innerHTML = `
       <div class="day-header">
         <div>
           <span class="day-name${isToday(date) ? ' today' : ''}">${DAY_NAMES[day]}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+          ${outBadges}
           ${entry.mealId && entry.cook ? `<span class="cook-badge ${cookBadgeClass}">${cookLabel}</span>` : ''}
           <span class="day-date">${formatShortDate(date)}</span>
         </div>
@@ -932,6 +1003,11 @@ function renderPlanner() {
             </div>
           ` : ''}
         ` : `<div class="no-meal">Nothing planned yet</div>`}
+        <div class="out-row">
+          <span class="out-label">Out:</span>
+          <div class="out-pill ${entry.outAlex ? 'active' : ''}" onclick="setOut('${day}', 'alex')">🐧 Alex</div>
+          <div class="out-pill ${entry.outPartner ? 'active' : ''}" onclick="setOut('${day}', 'partner')">🦓 Lauren</div>
+        </div>
       </div>
     `;
     container.appendChild(card);
@@ -945,11 +1021,15 @@ function toggleIngredients(day) {
 
 async function setMeal(day, mealId) {
   const wk = weekKey(currentWeekStart);
+  const existing = plannerCache[day] || {};
+  const outFields = {};
+  if (existing.outAlex) outFields.outAlex = true;
+  if (existing.outPartner) outFields.outPartner = true;
   const meal = mealsCache[mealId];
   const update = {
     [day]: mealId
-      ? { mealId, mealName: meal.name, cook: plannerCache[day]?.cook || '' }
-      : firebase.firestore.FieldValue.delete()
+      ? { mealId, mealName: meal.name, cook: existing.cook || '', ...outFields }
+      : (Object.keys(outFields).length ? outFields : firebase.firestore.FieldValue.delete())
   };
   await db.collection('planner').doc(wk).set(update, { merge: true });
 }
@@ -957,8 +1037,12 @@ async function setMeal(day, mealId) {
 async function clearDay(day) {
   const wk = weekKey(currentWeekStart);
   expandedIngredients[day] = false;
+  const existing = plannerCache[day] || {};
+  const outFields = {};
+  if (existing.outAlex) outFields.outAlex = true;
+  if (existing.outPartner) outFields.outPartner = true;
   await db.collection('planner').doc(wk).set(
-    { [day]: firebase.firestore.FieldValue.delete() },
+    { [day]: Object.keys(outFields).length ? outFields : firebase.firestore.FieldValue.delete() },
     { merge: true }
   );
 }
@@ -1222,6 +1306,75 @@ async function saveMeal() {
   }
 
   closeMealModal();
+}
+
+// ── OUT STATUS ────────────────────────────────────────────────────────────
+async function setOut(day, who) {
+  const wk = weekKey(currentWeekStart);
+  const entry = plannerCache[day] || {};
+  const field = who === 'alex' ? 'outAlex' : 'outPartner';
+  const newVal = !entry[field];
+  await db.collection('planner').doc(wk).set(
+    { [day]: { ...entry, [field]: newVal } },
+    { merge: true }
+  );
+}
+
+// ── SHOP ──────────────────────────────────────────────────────────────────
+function renderShop() {
+  const wk = weekKey(currentWeekStart);
+  if (shopWeekKey !== wk) { shopChecked = {}; shopWeekKey = wk; }
+
+  const container = document.getElementById('shopContent');
+
+  // Collect all ingredients across the week's planned meals
+  const ingMap = {}; // ingredient -> [label strings]
+  DAYS.forEach(day => {
+    const entry = plannerCache[day];
+    if (!entry?.mealId) return;
+    const meal = mealsCache[entry.mealId];
+    if (!meal?.ingredients?.length) return;
+    meal.ingredients.forEach(ing => {
+      if (!ingMap[ing]) ingMap[ing] = [];
+      ingMap[ing].push(`${DAY_NAMES[day].slice(0, 3)}: ${meal.name}`);
+    });
+  });
+
+  _shopIngredients = Object.keys(ingMap).sort((a, b) => a.localeCompare(b));
+
+  if (_shopIngredients.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>No ingredients yet.<br>Plan some meals first.</p></div>`;
+    return;
+  }
+
+  const doneCount = _shopIngredients.filter(i => shopChecked[i]).length;
+
+  let html = `
+    <div class="shop-header">
+      <span style="font-size:16px;font-weight:700;">Shopping list</span>
+      <span style="font-size:13px;color:var(--sub);">${doneCount}/${_shopIngredients.length} got</span>
+    </div>`;
+
+  _shopIngredients.forEach((ing, idx) => {
+    const checked = shopChecked[ing] || false;
+    html += `
+      <div class="shop-item${checked ? ' checked' : ''}" onclick="toggleShopItem(${idx})">
+        <div class="shop-check">${checked ? '✓' : ''}</div>
+        <div>
+          <div class="shop-item-name">${ing}</div>
+          <div class="shop-item-meals">${ingMap[ing].join(', ')}</div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleShopItem(idx) {
+  const ing = _shopIngredients[idx];
+  if (!ing) return;
+  shopChecked[ing] = !shopChecked[ing];
+  renderShop();
 }
 
 // ── FEEDBACK ─────────────────────────────────────────────────────────────
