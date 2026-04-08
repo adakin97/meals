@@ -134,10 +134,12 @@
 
     .meal-picker {
       flex: 1;
+      min-width: 0;
+      width: 0;
       background: var(--bg);
       border: 1.5px solid var(--border);
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 8px 36px 8px 12px;
       font-size: 14px;
       color: var(--text);
       cursor: pointer;
@@ -145,8 +147,7 @@
       -webkit-appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
+      background-position: right 14px center;
     }
 
     .meal-picker:focus { outline: none; border-color: var(--accent); }
@@ -419,42 +420,51 @@
       color: var(--together);
     }
 
-    /* OUT STATUS */
-    .out-row {
-      display: flex; align-items: center; gap: 6px;
+    /* DAY NOTE */
+    .day-note-row {
       margin-top: 10px; padding-top: 10px;
       border-top: 1px solid var(--border);
     }
-    .out-label {
-      font-size: 11px; color: var(--sub); font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.4px; flex-shrink: 0;
+    .day-note-input {
+      width: 100%; padding: 7px 11px;
+      background: transparent; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 13px; color: var(--sub);
+      outline: none; font-family: inherit;
     }
-    .out-pill {
-      padding: 4px 10px; border-radius: 20px;
-      border: 1px solid var(--border); background: transparent;
-      font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer;
-    }
-    .out-pill.active {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.5); color: #f87171;
-    }
-    .out-badge {
-      font-size: 11px; font-weight: 600; padding: 2px 8px;
-      border-radius: 20px;
-      background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #f87171;
-    }
+    .day-note-input:focus { border-color: var(--accent); color: var(--text); }
+    .day-note-input::placeholder { color: var(--border); font-style: italic; }
 
     /* SHOP */
     .shop-header {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+    }
+    .shop-add-row {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .shop-add-row input {
+      flex: 1; min-width: 0;
+      padding: 9px 12px; background: var(--card);
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 14px; color: var(--text); outline: none; font-family: inherit;
+    }
+    .shop-add-row input:focus { border-color: var(--accent); }
+    .shop-add-btn {
+      background: var(--accent); color: #0a0a0a; border: none;
+      border-radius: 10px; padding: 9px 16px; font-size: 14px;
+      font-weight: 700; cursor: pointer; flex-shrink: 0;
+    }
+    .shop-add-btn:active { opacity: 0.85; }
+    .shop-section-label {
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 14px 0 8px;
     }
     .shop-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; border-radius: var(--radius);
+      padding: 11px 14px; border-radius: var(--radius);
       background: var(--card); border: 1px solid var(--border);
-      margin-bottom: 8px; cursor: pointer; transition: opacity 0.15s;
+      margin-bottom: 8px; transition: opacity 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
     .shop-item.checked { opacity: 0.38; }
@@ -463,12 +473,19 @@
       border: 2px solid var(--border); display: flex;
       align-items: center; justify-content: center;
       font-size: 12px; font-weight: 700; flex-shrink: 0; color: var(--accent);
+      cursor: pointer; flex-shrink: 0;
     }
     .shop-item.checked .shop-check {
       background: var(--accent); border-color: var(--accent); color: #0a0a0a;
     }
+    .shop-item-body { flex: 1; min-width: 0; cursor: pointer; }
     .shop-item-name { font-size: 14px; font-weight: 600; }
     .shop-item-meals { font-size: 12px; color: var(--sub); margin-top: 2px; }
+    .shop-del-btn {
+      background: none; border: none; color: var(--sub); font-size: 18px;
+      cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0;
+    }
+    .shop-del-btn:active { color: #f87171; }
 
     /* MODAL */
     .modal-backdrop {
@@ -740,7 +757,8 @@
 
 <!-- SHOP VIEW -->
 <div class="view" id="view-shop">
-  <div id="shopContent"></div>
+  <div id="shopContent">
+  </div>
 </div>
 
 <!-- FEEDBACK VIEW -->
@@ -911,7 +929,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('weekNav').style.display = (tab === 'planner' || tab === 'shop') ? 'flex' : 'none';
   if (tab === 'meals') renderMeals();
-  if (tab === 'shop') renderShop();
+  if (tab === 'shop') loadShopItems();
   if (tab === 'feedback') loadFeedback();
 }
 
@@ -926,7 +944,7 @@ function loadWeek() {
   unsubPlanner = db.collection('planner').doc(wk).onSnapshot(snap => {
     plannerCache = snap.exists ? snap.data() : {};
     renderPlanner();
-    if (document.getElementById('view-shop').classList.contains('active')) renderShop();
+    if (document.getElementById('view-shop').classList.contains('active')) loadShopItems();
   });
 }
 
@@ -964,18 +982,12 @@ function renderPlanner() {
       : entry.cook === 'together' ? 'together'
       : '';
 
-    const outBadges = [
-      entry.outAlex ? `<span class="out-badge">🐧 out</span>` : '',
-      entry.outPartner ? `<span class="out-badge">🦓 out</span>` : ''
-    ].filter(Boolean).join('');
-
     card.innerHTML = `
       <div class="day-header">
         <div>
           <span class="day-name${isToday(date) ? ' today' : ''}">${DAY_NAMES[day]}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-          ${outBadges}
+        <div style="display:flex;align-items:center;gap:8px;">
           ${entry.mealId && entry.cook ? `<span class="cook-badge ${cookBadgeClass}">${cookLabel}</span>` : ''}
           <span class="day-date">${formatShortDate(date)}</span>
         </div>
@@ -1003,10 +1015,10 @@ function renderPlanner() {
             </div>
           ` : ''}
         ` : `<div class="no-meal">Nothing planned yet</div>`}
-        <div class="out-row">
-          <span class="out-label">Out:</span>
-          <div class="out-pill ${entry.outAlex ? 'active' : ''}" onclick="setOut('${day}', 'alex')">🐧 Alex</div>
-          <div class="out-pill ${entry.outPartner ? 'active' : ''}" onclick="setOut('${day}', 'partner')">🦓 Lauren</div>
+        <div class="day-note-row">
+          <input class="day-note-input" type="text" placeholder="Notes for this day..."
+            value="${(entry.note || '').replace(/"/g, '&quot;')}"
+            oninput="onNoteInput('${day}', this.value)">
         </div>
       </div>
     `;
@@ -1022,14 +1034,12 @@ function toggleIngredients(day) {
 async function setMeal(day, mealId) {
   const wk = weekKey(currentWeekStart);
   const existing = plannerCache[day] || {};
-  const outFields = {};
-  if (existing.outAlex) outFields.outAlex = true;
-  if (existing.outPartner) outFields.outPartner = true;
   const meal = mealsCache[mealId];
+  const noteField = existing.note ? { note: existing.note } : {};
   const update = {
     [day]: mealId
-      ? { mealId, mealName: meal.name, cook: existing.cook || '', ...outFields }
-      : (Object.keys(outFields).length ? outFields : firebase.firestore.FieldValue.delete())
+      ? { mealId, mealName: meal.name, cook: existing.cook || '', ...noteField }
+      : (existing.note ? { note: existing.note } : firebase.firestore.FieldValue.delete())
   };
   await db.collection('planner').doc(wk).set(update, { merge: true });
 }
@@ -1038,11 +1048,8 @@ async function clearDay(day) {
   const wk = weekKey(currentWeekStart);
   expandedIngredients[day] = false;
   const existing = plannerCache[day] || {};
-  const outFields = {};
-  if (existing.outAlex) outFields.outAlex = true;
-  if (existing.outPartner) outFields.outPartner = true;
   await db.collection('planner').doc(wk).set(
-    { [day]: Object.keys(outFields).length ? outFields : firebase.firestore.FieldValue.delete() },
+    { [day]: existing.note ? { note: existing.note } : firebase.firestore.FieldValue.delete() },
     { merge: true }
   );
 }
@@ -1308,26 +1315,56 @@ async function saveMeal() {
   closeMealModal();
 }
 
-// ── OUT STATUS ────────────────────────────────────────────────────────────
-async function setOut(day, who) {
+// ── DAY NOTES ─────────────────────────────────────────────────────────────
+const _noteTimers = {};
+function onNoteInput(day, val) {
+  clearTimeout(_noteTimers[day]);
+  _noteTimers[day] = setTimeout(() => saveNote(day, val), 700);
+}
+async function saveNote(day, val) {
   const wk = weekKey(currentWeekStart);
   const entry = plannerCache[day] || {};
-  const field = who === 'alex' ? 'outAlex' : 'outPartner';
-  const newVal = !entry[field];
   await db.collection('planner').doc(wk).set(
-    { [day]: { ...entry, [field]: newVal } },
+    { [day]: { ...entry, note: val || firebase.firestore.FieldValue.delete() } },
     { merge: true }
   );
 }
 
 // ── SHOP ──────────────────────────────────────────────────────────────────
-function renderShop() {
+let shopCustomItems = [];   // string[] loaded from Firestore for current week
+let unsubShop = null;
+
+function loadShopItems() {
   const wk = weekKey(currentWeekStart);
   if (shopWeekKey !== wk) { shopChecked = {}; shopWeekKey = wk; }
+  if (unsubShop) unsubShop();
+  unsubShop = db.collection('shop').doc(wk).onSnapshot(snap => {
+    shopCustomItems = snap.exists ? (snap.data().items || []) : [];
+    renderShop();
+  });
+}
 
+async function addShopItem() {
+  const input = document.getElementById('shopAddInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const wk = weekKey(currentWeekStart);
+  const updated = [...shopCustomItems, val];
+  await db.collection('shop').doc(wk).set({ items: updated });
+  input.value = '';
+  input.focus();
+}
+
+async function removeShopItem(idx) {
+  const wk = weekKey(currentWeekStart);
+  const updated = shopCustomItems.filter((_, i) => i !== idx);
+  await db.collection('shop').doc(wk).set({ items: updated });
+}
+
+function renderShop() {
   const container = document.getElementById('shopContent');
 
-  // Collect all ingredients across the week's planned meals
+  // Collect meal-sourced ingredients
   const ingMap = {}; // ingredient -> [label strings]
   DAYS.forEach(day => {
     const entry = plannerCache[day];
@@ -1339,41 +1376,72 @@ function renderShop() {
       ingMap[ing].push(`${DAY_NAMES[day].slice(0, 3)}: ${meal.name}`);
     });
   });
+  const mealIngredients = Object.keys(ingMap).sort((a, b) => a.localeCompare(b));
 
-  _shopIngredients = Object.keys(ingMap).sort((a, b) => a.localeCompare(b));
+  // Build master index for checked-state toggling
+  _shopIngredients = [
+    ...shopCustomItems.map(i => '__custom__' + i),
+    ...mealIngredients
+  ];
 
-  if (_shopIngredients.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>No ingredients yet.<br>Plan some meals first.</p></div>`;
-    return;
-  }
-
-  const doneCount = _shopIngredients.filter(i => shopChecked[i]).length;
+  const totalCount = shopCustomItems.length + mealIngredients.length;
+  const doneCount = _shopIngredients.filter(k => shopChecked[k]).length;
 
   let html = `
     <div class="shop-header">
       <span style="font-size:16px;font-weight:700;">Shopping list</span>
-      <span style="font-size:13px;color:var(--sub);">${doneCount}/${_shopIngredients.length} got</span>
+      <span style="font-size:13px;color:var(--sub);">${totalCount > 0 ? `${doneCount}/${totalCount} got` : ''}</span>
+    </div>
+    <div class="shop-add-row">
+      <input id="shopAddInput" type="text" placeholder="Add item..."
+        onkeydown="if(event.key==='Enter') addShopItem()">
+      <button class="shop-add-btn" onclick="addShopItem()">+ Add</button>
     </div>`;
 
-  _shopIngredients.forEach((ing, idx) => {
-    const checked = shopChecked[ing] || false;
-    html += `
-      <div class="shop-item${checked ? ' checked' : ''}" onclick="toggleShopItem(${idx})">
-        <div class="shop-check">${checked ? '✓' : ''}</div>
-        <div>
-          <div class="shop-item-name">${ing}</div>
-          <div class="shop-item-meals">${ingMap[ing].join(', ')}</div>
-        </div>
-      </div>`;
-  });
+  if (shopCustomItems.length > 0) {
+    html += `<div class="shop-section-label">Added</div>`;
+    shopCustomItems.forEach((ing, i) => {
+      const key = '__custom__' + ing;
+      const checked = shopChecked[key] || false;
+      html += `
+        <div class="shop-item${checked ? ' checked' : ''}">
+          <div class="shop-check" onclick="toggleShopItem(${i})">${checked ? '✓' : ''}</div>
+          <div class="shop-item-body" onclick="toggleShopItem(${i})">
+            <div class="shop-item-name">${ing}</div>
+          </div>
+          <button class="shop-del-btn" onclick="removeShopItem(${i})">×</button>
+        </div>`;
+    });
+  }
+
+  if (mealIngredients.length > 0) {
+    html += `<div class="shop-section-label">From meals</div>`;
+    mealIngredients.forEach((ing, i) => {
+      const key = ing;
+      const idx = shopCustomItems.length + i;
+      const checked = shopChecked[key] || false;
+      html += `
+        <div class="shop-item${checked ? ' checked' : ''}" onclick="toggleShopItem(${idx})">
+          <div class="shop-check">${checked ? '✓' : ''}</div>
+          <div class="shop-item-body">
+            <div class="shop-item-name">${ing}</div>
+            <div class="shop-item-meals">${ingMap[ing].join(', ')}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  if (totalCount === 0) {
+    html += `<div class="empty-state"><div class="icon">🛒</div><p>Add items above or plan some meals.</p></div>`;
+  }
 
   container.innerHTML = html;
 }
 
 function toggleShopItem(idx) {
-  const ing = _shopIngredients[idx];
-  if (!ing) return;
-  shopChecked[ing] = !shopChecked[ing];
+  const key = _shopIngredients[idx];
+  if (!key) return;
+  shopChecked[key] = !shopChecked[key];
   renderShop();
 }
 
