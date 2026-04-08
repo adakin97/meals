@@ -29,7 +29,33 @@
       --radius: 14px;
       --header-h: 56px;
       --tab-h: 60px;
+      --header-bg: rgba(10,10,10,0.92);
+      --nav-bg: rgba(10,10,10,0.92);
+      --modal-bg: #1a1a1a;
     }
+
+    body.light {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --accent: #5a9200;
+      --penguin: #5a9200;
+      --penguin-belly: #ffffff;
+      --lauren: #6d28d9;
+      --together: #c2560a;
+      --text: #111111;
+      --sub: #666666;
+      --border: #e0e0e0;
+      --header-bg: rgba(242,242,247,0.92);
+      --nav-bg: rgba(255,255,255,0.92);
+      --modal-bg: #f9f9f9;
+    }
+
+    .theme-toggle {
+      background: none; border: none; cursor: pointer;
+      font-size: 18px; padding: 6px; border-radius: 8px;
+      line-height: 1; flex-shrink: 0;
+    }
+    .theme-toggle:active { background: var(--border); }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -46,7 +72,7 @@
       top: 0; left: 0; right: 0;
       height: calc(var(--header-h) + env(safe-area-inset-top));
       padding-top: env(safe-area-inset-top);
-      background: rgba(10, 10, 10, 0.92);
+      background: var(--header-bg);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -73,7 +99,7 @@
       bottom: 0; left: 0; right: 0;
       height: calc(var(--tab-h) + env(safe-area-inset-bottom));
       padding-bottom: env(safe-area-inset-bottom);
-      background: rgba(10, 10, 10, 0.92);
+      background: var(--nav-bg);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
@@ -501,7 +527,7 @@
     .modal-backdrop.open { display: flex; }
 
     .modal {
-      background: #1a1a1a;
+      background: var(--modal-bg);
       border-radius: 20px 20px 0 0;
       border-top: 1px solid var(--border);
       padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
@@ -734,10 +760,13 @@
 
 <header>
   <h1>🐧🦓 Meals</h1>
-  <div class="week-nav" id="weekNav">
-    <button onclick="changeWeek(-1)">‹</button>
-    <span class="week-label" id="weekLabel"></span>
-    <button onclick="changeWeek(1)">›</button>
+  <div style="display:flex;align-items:center;gap:4px;">
+    <div class="week-nav" id="weekNav">
+      <button onclick="changeWeek(-1)">‹</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button onclick="changeWeek(1)">›</button>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️</button>
   </div>
 </header>
 
@@ -1508,6 +1537,20 @@ document.getElementById('weekNav').style.display = 'flex';
 document.getElementById('mealModal').addEventListener('click', function(e) {
   if (e.target === this) closeMealModal();
 });
+
+// ── THEME ─────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('mealsTheme', isLight ? 'light' : 'dark');
+  document.getElementById('themeToggle').textContent = isLight ? '🌙' : '☀️';
+}
+
+(function applySavedTheme() {
+  if (localStorage.getItem('mealsTheme') === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('themeToggle').textContent = '🌙';
+  }
+})();
 
 loadMeals(() => loadWeek());
 </script>
