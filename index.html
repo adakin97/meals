@@ -421,9 +421,23 @@
       margin: 16px 0 8px;
       padding-bottom: 4px;
       border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
     }
 
     .week-group-header:first-child { margin-top: 0; }
+
+    .week-group-chevron {
+      font-size: 10px;
+      transition: transform 0.2s ease;
+    }
+
+    .week-group-chevron.collapsed { transform: rotate(-90deg); }
+
+    .week-group-meals.collapsed { display: none; }
 
     .cook-badge {
       font-size: 11px;
@@ -795,12 +809,27 @@
   </div>
 </div>
 
-<!-- FEEDBACK VIEW -->
+<!-- FEEDBACK / OTHER VIEW -->
 <div class="view" id="view-feedback">
   <div class="feedback-hero">
-    <div class="feedback-hero-title">Feedback for the<br><span class="feedback-hot">(hot)</span> developer</div>
-    <div class="feedback-hero-sub">Alex reads every word. Probably.</div>
+    <div class="feedback-hero-title">Other</div>
+    <div class="feedback-hero-sub">Extras and secrets.</div>
   </div>
+
+  <div class="day-card" style="margin-bottom:16px;">
+    <div style="padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Lauren's Corner</div>
+      <button class="btn-primary" style="width:100%;background:#a78bfa;border-color:#a78bfa;" onclick="openLaurenList()">🦓 Lauren's Secret Meal List</button>
+    </div>
+  </div>
+
+  <div class="day-card" style="margin-bottom:16px;">
+    <div style="padding:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Feedback</div>
+      <div class="feedback-hero" style="padding:0 0 14px;">
+        <div class="feedback-hero-title" style="font-size:18px;">For the<br><span class="feedback-hot">(hot)</span> developer</div>
+        <div class="feedback-hero-sub">Alex reads every word. Probably.</div>
+      </div>
 
   <div class="day-card" style="margin-bottom:16px;">
     <div style="padding:14px;">
@@ -818,8 +847,36 @@
       <button class="btn-primary" style="width:100%;" onclick="submitFeedback()">Submit feedback</button>
     </div>
   </div>
+  </div>
 
   <div id="feedbackList"></div>
+</div>
+
+<!-- LAUREN'S SECRET MEAL LIST OVERLAY -->
+<div id="laurenOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding-bottom:80px;">
+  <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:1;">
+    <button onclick="closeLaurenList()" style="background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;padding:4px;">←</button>
+    <div>
+      <div style="font-size:17px;font-weight:800;color:#a78bfa;">🦓 Lauren's Secret Meal List</div>
+      <div style="font-size:12px;color:var(--sub);">Just for Lauren. Shh.</div>
+    </div>
+  </div>
+  <div style="padding:16px;">
+    <div class="day-card" style="margin-bottom:16px;">
+      <div style="padding:14px;">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Meal name</label>
+          <input class="form-input" id="laurenMealInput" placeholder="e.g. Avocado toast..." />
+        </div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label">Notes</label>
+          <input class="form-input" id="laurenMealNotes" placeholder="Optional notes..." />
+        </div>
+        <button class="btn-primary" style="width:100%;background:#a78bfa;border-color:#a78bfa;" onclick="addLaurenMeal()">Add meal</button>
+      </div>
+    </div>
+    <div id="laurenMealList"></div>
+  </div>
 </div>
 
 <!-- BOTTOM NAV -->
@@ -837,8 +894,8 @@
     Shop
   </button>
   <button id="tab-feedback" onclick="switchTab('feedback')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    Feedback
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+    Other
   </button>
 </nav>
 
@@ -906,6 +963,7 @@ let editingMealId = null;
 let modalIngredients = [];
 let expandedIngredients = {};  // day -> bool
 let expandedMeals = {};        // mealId -> bool
+let collapsedWeeks = {};       // weekKey -> bool (true = collapsed)
 let shopChecked = {};          // ingredient -> bool
 let shopWeekKey = null;        // week key when shopChecked was last reset
 let _shopIngredients = [];     // current shop list (for toggleShopItem index)
@@ -1238,14 +1296,26 @@ function renderMeals() {
   });
 
   sortedWeeks.forEach(wk => {
+    const isCurrentWk = wk === currentWk;
+    // Default: current week expanded, previous weeks collapsed
+    if (!(wk in collapsedWeeks)) collapsedWeeks[wk] = !isCurrentWk;
+    const isCollapsed = collapsedWeeks[wk];
+
     const header = document.createElement('div');
     header.className = 'week-group-header';
-    header.textContent = wk === currentWk ? 'This Week' : formatWeekLabel(wk);
+    header.innerHTML = `<span>${isCurrentWk ? 'This Week' : formatWeekLabel(wk)}</span><span class="week-group-chevron${isCollapsed ? ' collapsed' : ''}">▼</span>`;
+    header.addEventListener('click', () => {
+      collapsedWeeks[wk] = !collapsedWeeks[wk];
+      renderMeals();
+    });
     container.appendChild(header);
 
+    const mealsGroup = document.createElement('div');
+    mealsGroup.className = 'week-group-meals' + (isCollapsed ? ' collapsed' : '');
     groups[wk].sort((a,b) => a.name.localeCompare(b.name)).forEach(meal => {
-      container.appendChild(renderMealCard(meal));
+      mealsGroup.appendChild(renderMealCard(meal));
     });
+    container.appendChild(mealsGroup);
   });
 }
 
@@ -1525,6 +1595,63 @@ function loadFeedback() {
       container.appendChild(el);
     });
   });
+}
+
+// ── LAUREN'S SECRET MEAL LIST ─────────────────────────────────────────────
+function openLaurenList() {
+  document.getElementById('laurenOverlay').style.display = 'block';
+  loadLaurenMeals();
+}
+
+function closeLaurenList() {
+  document.getElementById('laurenOverlay').style.display = 'none';
+}
+
+function loadLaurenMeals() {
+  const container = document.getElementById('laurenMealList');
+  container.innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+  db.collection('lauren_meals').orderBy('createdAt', 'asc').get().then(snap => {
+    if (snap.empty) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">🦓</div><p>No meals yet. Add your first one!</p></div>';
+      return;
+    }
+    container.innerHTML = '';
+    snap.forEach(doc => {
+      const d = doc.data();
+      const el = document.createElement('div');
+      el.className = 'day-card';
+      el.style.marginBottom = '10px';
+      el.innerHTML = `
+        <div style="padding:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-weight:700;color:var(--text);font-size:15px;">${d.name}</div>
+            ${d.notes ? `<div style="font-size:13px;color:var(--sub);margin-top:3px;">${d.notes}</div>` : ''}
+          </div>
+          <button onclick="deleteLaurenMeal('${doc.id}')" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:18px;padding:0;flex-shrink:0;">×</button>
+        </div>`;
+      container.appendChild(el);
+    });
+  });
+}
+
+async function addLaurenMeal() {
+  const name = document.getElementById('laurenMealInput').value.trim();
+  if (!name) return;
+  const notes = document.getElementById('laurenMealNotes').value.trim();
+  await db.collection('lauren_meals').add({
+    name,
+    notes,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('laurenMealInput').value = '';
+  document.getElementById('laurenMealNotes').value = '';
+  loadLaurenMeals();
+  showToast('Meal added 🦓');
+}
+
+async function deleteLaurenMeal(id) {
+  await db.collection('lauren_meals').doc(id).delete();
+  loadLaurenMeals();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
