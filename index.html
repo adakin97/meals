@@ -1132,23 +1132,27 @@ async function setMeal(day, mealId) {
   const wk = weekKey(currentWeekStart);
   const existing = plannerCache[day] || {};
   const meal = mealsCache[mealId];
-  const noteField = existing.note ? { note: existing.note } : {};
-  const update = {
-    [day]: mealId
-      ? { mealId, mealName: meal.name, cook: existing.cook || '', ...noteField }
-      : (existing.note ? { note: existing.note } : firebase.firestore.FieldValue.delete())
-  };
-  await db.collection('planner').doc(wk).set(update, { merge: true });
+  const ref = db.collection('planner').doc(wk);
+  if (mealId) {
+    const noteField = existing.note ? { note: existing.note } : {};
+    await ref.set({ [day]: { mealId, mealName: meal.name, cook: existing.cook || '', ...noteField } }, { merge: true });
+  } else if (existing.note) {
+    await ref.update({ [day]: { note: existing.note } });
+  } else {
+    await ref.update({ [day]: firebase.firestore.FieldValue.delete() });
+  }
 }
 
 async function clearDay(day) {
   const wk = weekKey(currentWeekStart);
   expandedIngredients[day] = false;
   const existing = plannerCache[day] || {};
-  await db.collection('planner').doc(wk).set(
-    { [day]: existing.note ? { note: existing.note } : firebase.firestore.FieldValue.delete() },
-    { merge: true }
-  );
+  const ref = db.collection('planner').doc(wk);
+  if (existing.note) {
+    await ref.update({ [day]: { note: existing.note } });
+  } else {
+    await ref.update({ [day]: firebase.firestore.FieldValue.delete() });
+  }
 }
 
 async function setCook(day, cook) {
