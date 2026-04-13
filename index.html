@@ -1155,8 +1155,9 @@ async function setCook(day, cook) {
   const wk = weekKey(currentWeekStart);
   const entry = plannerCache[day] || {};
   if (!entry.mealId) return;
+  const newCook = entry.cook === cook ? '' : cook;
   await db.collection('planner').doc(wk).set(
-    { [day]: { ...entry, cook } },
+    { [day]: { ...entry, cook: newCook } },
     { merge: true }
   );
 }
